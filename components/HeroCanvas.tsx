@@ -255,7 +255,7 @@ export const HeroCanvas: React.FC<HeroCanvasProps> = ({ onNavigate }) => {
         disabled={tool === 'pen' || tool === 'comment'}
         panning={{ excluded: ["nopan"] }}
       >
-        {({ zoomIn, zoomOut, resetTransform, state }) => {
+        {({ zoomIn, zoomOut, resetTransform, state }: any) => {
           const currentScale = state?.scale ?? initialState.scale;
 
           return (
