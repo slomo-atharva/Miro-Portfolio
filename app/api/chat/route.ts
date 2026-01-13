@@ -1,3 +1,7 @@
+// This file is intended for Next.js App Router and cannot be used in a static Vite SPA deployment.
+// The ChatPanel component currently fetches directly from OpenAI on the client side.
+
+/*
 import OpenAI from 'openai';
 import { OpenAIStream, StreamingTextResponse } from 'ai';
 
@@ -16,17 +20,7 @@ export async function POST(req: Request) {
     messages: [
       {
         role: 'system',
-        content: `You are a friendly and helpful AI assistant for Akshay Krishnan's portfolio. 
-        
-        About Akshay:
-        - Creative Product Designer specializing in Canvas interactions, React, and Framer Motion.
-        - Experience in SaaS (Gravity One), E-Commerce (Velvet), and Data Viz (EcoTrack).
-        - Loves creating high-fidelity whiteboard collaboration simulations.
-        
-        Your Tone:
-        - Casual, enthusiastic, and professional.
-        - Keep answers concise and engaging.
-        - Act like you are chatting on a collaborative whiteboard.`
+        content: `You are a friendly and helpful AI assistant for Akshay Krishnan's portfolio.`
       },
       ...messages
     ],
@@ -35,3 +29,5 @@ export async function POST(req: Request) {
   const stream = OpenAIStream(response);
   return new StreamingTextResponse(stream);
 }
+*/
+export {};
