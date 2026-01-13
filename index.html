@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Akshay Krishnan | Product Designer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Kalam:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+      body {
+        font-family: 'Inter', sans-serif;
+        overflow: hidden;
+        background-color: #F2F2F2;
+      }
+      .font-hand {
+        font-family: 'Kalam', cursive;
+      }
+      .no-select {
+        user-select: none;
+        -webkit-user-select: none;
+      }
+      
+      /* --- Custom Cursors --- */
+      
+      /* Hand: Default Pan behavior */
+      .cursor-pan { 
+        cursor: grab; 
+      }
+      .cursor-pan:active { 
+        cursor: grabbing; 
+      }
+
+      /* Pen: SVG Icon */
+      .cursor-pen { 
+        cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%23000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>') 0 24, crosshair;
+      }
+
+      /* Comment: SVG Icon */
+      .cursor-comment { 
+        cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="%232D9BF0" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>') 0 0, text; 
+      }
+
+      .cursor-default { 
+        cursor: default; 
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "framer-motion": "https://esm.sh/framer-motion@^12.26.1",
+    "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
+    "@emailjs/browser": "https://esm.sh/@emailjs/browser@3.11.0",
+    "react-zoom-pan-pinch": "https://esm.sh/react-zoom-pan-pinch@3.4.4",
+    "swr": "https://esm.sh/swr@2.2.5?external=react",
+    "ai": "https://esm.sh/ai@3.1.37?external=react",
+    "ai/react": "https://esm.sh/ai@3.1.37/react?external=react,react-dom,swr",
+    "openai": "https://esm.sh/openai@4.28.0",
+    "ai/": "https://esm.sh/ai@^6.0.31/"
+  }
+}
+</script>
+</head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
