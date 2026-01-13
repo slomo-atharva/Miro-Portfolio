@@ -594,7 +594,7 @@ export const CaseStudyBoard: React.FC<Props> = ({ onBack }) => {
 
 // --- Subcomponents ---
 
-const Hotspot = ({ x, y, label, children }: { x: string, y: string, label: string, children: React.ReactNode }) => {
+const Hotspot = ({ x, y, label, children }: { x: string, y: string, label: string, children?: React.ReactNode }) => {
     const [isOpen, setIsOpen] = useState(false);
     return (
         <div 
