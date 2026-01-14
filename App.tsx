@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Analytics } from '@vercel/analytics/react';
 import { HeroCanvas } from './components/HeroCanvas';
 import { AboutMeBoard } from './components/AboutMeBoard';
 import { ContactBoard } from './components/ContactBoard';
@@ -27,6 +28,7 @@ const App: React.FC = () => {
       ) : (
         <CaseStudyBoard onBack={() => setView('works')} />
       )}
+      <Analytics />
     </div>
   );
 };
