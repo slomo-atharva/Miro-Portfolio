@@ -9,15 +9,15 @@ interface ShareModalProps {
 }
 
 const EMAILJS_SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID || "service_s1sl706";
-const EMAILJS_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID || "template_fdj50rq";
+const EMAILJS_SHARE_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_SHARE_TEMPLATE_ID || "";
 const EMAILJS_PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY || "SJAnPIuCguEzZrNdv";
 
 export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose }) => {
   const [emails, setEmails] = useState('');
   const [isCopied, setIsCopied] = useState(false);
+  const [isSending, setIsSending] = useState(false);
   const [sentSuccess, setSentSuccess] = useState(false);
-
-  const profileCardText = `Akshay Krishnan\nProduct Designer\nBangalore, India\n\nAlways open for interesting ideas & opportunities.\n\nAI-Accelerated Design: I leverage AI tools to accelerate the design lifecycle...\n\nKey Highlights & Skills:\n- Designing core strategy workflows at Gravity One\n- Redesigned dashboards driving 80% increase in retention\n- Core skills: UI/UX Design, User Research, Prototyping\n- Proficient in Figma, AI tools`;
+  const [sendError, setSendError] = useState('');
 
   const profileLink = window.location.origin + "?view=profile";
 
@@ -27,20 +27,46 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose }) => {
     setTimeout(() => setIsCopied(false), 2000);
   };
 
-  const handleSendEmails = () => {
+  const handleSendEmails = async () => {
     if (!emails.trim()) return;
+    if (!EMAILJS_SHARE_TEMPLATE_ID) {
+      setSendError('Share template not configured. Add VITE_EMAILJS_SHARE_TEMPLATE_ID to .env.local');
+      return;
+    }
+    setIsSending(true);
+    setSendError('');
     
-    // Split by commas or spaces
     const emailList = emails.split(/[, ]+/).filter(e => e.trim());
     
-    const subject = encodeURIComponent("Akshay Krishnan - Profile Card");
-    const body = encodeURIComponent(`Here is my profile card:\n\n${profileCardText}\n\nView more at: ${profileLink}`);
-    
-    window.location.href = `mailto:${emailList.join(',')}?subject=${subject}&body=${body}`;
-    
-    setSentSuccess(true);
-    setEmails('');
-    setTimeout(() => setSentSuccess(false), 3000);
+    let allSuccess = true;
+    for (const recipientEmail of emailList) {
+      try {
+        await emailjs.send(
+          EMAILJS_SERVICE_ID,
+          EMAILJS_SHARE_TEMPLATE_ID,
+          {
+            to_email: recipientEmail,
+            from_name: "Akshay Krishnan",
+            to_name: recipientEmail.split('@')[0],
+            subject: "Akshay Krishnan shared a Profile Card with you",
+            message: `Hi!\n\nAkshay Krishnan has shared their profile card with you.\n\n🔗 View Profile Card: ${profileLink}\n\n━━━━━━━━━━━━━━━━━━━━\n\nAkshay Krishnan\nProduct Designer | Bangalore, India\n\nAlways open for interesting ideas & opportunities.\n\nAI-Accelerated Design: I leverage AI tools to accelerate the design lifecycle and bridge the gap between design and development.\n\nKey Highlights & Skills:\n• Designing core strategy workflows at Gravity One\n• Redesigned dashboards driving 80% increase in retention\n• Core skills: UI/UX Design, User Research, Prototyping\n• Proficient in Figma, AI tools, and problem-solving\n\n🌐 krisme.space\nin linkedin.com/in/akshay025/\n✉️ krishnan.akshay.b@gmail.com`,
+          },
+          EMAILJS_PUBLIC_KEY
+        );
+      } catch (error: any) {
+        console.error("Failed to send to", recipientEmail, error);
+        allSuccess = false;
+        const errMsg = error?.text || error?.message || String(error);
+        setSendError(`Failed: ${errMsg}`);
+      }
+    }
+
+    setIsSending(false);
+    if (allSuccess) {
+      setSentSuccess(true);
+      setEmails('');
+      setTimeout(() => setSentSuccess(false), 3000);
+    }
   };
 
   if (!isOpen) return null;
@@ -102,13 +128,14 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose }) => {
                      </div>
                      <button 
                        onClick={handleSendEmails}
-                       disabled={!emails.trim()}
+                       disabled={isSending || !emails.trim()}
                        className="bg-[#4262FF] hover:bg-[#3B57E5] disabled:bg-blue-300 text-white px-4 text-sm font-medium transition-colors rounded-r-sm"
                      >
-                       Send
+                       {isSending ? 'Sending...' : 'Send'}
                      </button>
                   </div>
-                  {sentSuccess && <p className="text-xs text-green-600 font-medium mt-2">Profile sent successfully!</p>}
+                  {sentSuccess && <p className="text-xs text-green-600 font-medium mt-2">✅ Profile sent successfully!</p>}
+                  {sendError && <p className="text-xs text-red-500 font-medium mt-2">{sendError}</p>}
                 </div>
 
                 <div>
