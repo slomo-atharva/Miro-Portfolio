@@ -10,12 +10,12 @@ import { ArrowLeft, Plus, X, PenTool, Pin, Send, Loader2, FileText, Trash2 } fro
 // --- Configuration ---
 // Replace with your actual Firebase config
 const FIREBASE_CONFIG = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "your-app.firebaseapp.com",
-  projectId: "your-app",
-  storageBucket: "your-app.appspot.com",
-  messagingSenderId: "123456789",
-  appId: "1:123456789:web:abc123456"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "YOUR_API_KEY",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "your-app.firebaseapp.com",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "your-app",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "your-app.appspot.com",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "123456789",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:123456789:web:abc123456"
 };
 
 // --- Constants ---
@@ -73,6 +73,7 @@ interface Props {
 
 export const CommunityBoard: React.FC<Props> = ({ onBack }) => {
   const [initialState, setInitialState] = useState<{ scale: number; x: number; y: number } | null>(null);
+  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth < 768 : false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(false); // Set to true when real Firebase is connected
 
@@ -91,34 +92,31 @@ export const CommunityBoard: React.FC<Props> = ({ onBack }) => {
 
   // --- Initialization ---
   useEffect(() => {
-    // 1. Center Camera
-    const scale = 0.8;
-    const x = (window.innerWidth / 2) - CENTER_X;
-    const y = (window.innerHeight / 2) - CENTER_Y;
-    setInitialState({ scale, x, y });
+    const handleResize = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      
+      // Calculate initial centering
+      const scale = mobile ? 0.35 : 0.6; 
+      const winW = window.innerWidth;
+      const winH = window.innerHeight;
+      
+      const x = (winW / 2) - (CENTER_X * scale);
+      const y = (winH / 2) - (CENTER_Y * scale);
 
-    // 2. Check Admin Secret
+      setInitialState({ scale, x, y });
+    };
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+
+    // Check Admin Secret
     const params = new URLSearchParams(window.location.search);
     if (params.get('admin') === 'true') {
       setIsAdmin(true);
     }
 
-    // 3. Firebase Subscription (Mocked for now)
-    // To enable: Uncomment imports, init app, and replace this logic with onSnapshot
-    /*
-    const app = initializeApp(FIREBASE_CONFIG);
-    const db = getFirestore(app);
-    const notesUnsub = onSnapshot(query(collection(db, 'public_notes'), orderBy('createdAt', 'desc')), (snap) => {
-       const fetched = snap.docs.map(d => ({ id: d.id, ...d.data() })) as Note[];
-       setNotes(fetched);
-    });
-    const postsUnsub = onSnapshot(collection(db, 'blog_posts'), (snap) => {
-       const fetched = snap.docs.map(d => ({ id: d.id, ...d.data() })) as Post[];
-       setPosts(fetched);
-    });
-    return () => { notesUnsub(); postsUnsub(); };
-    */
-
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   // --- Handlers ---

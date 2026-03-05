@@ -7,7 +7,7 @@ interface Props {
   isSelected: boolean;
   tool: ToolType;
   onClick: (e: React.PointerEvent) => void;
-  onDrag: (delta: { x: number; y: number }) => void;
+  onDragEnd: (pos: { x: number; y: number }) => void;
 }
 
 export const StickyNote: React.FC<Props> = ({ 
@@ -15,16 +15,18 @@ export const StickyNote: React.FC<Props> = ({
   isSelected, 
   tool, 
   onClick,
-  onDrag
+  onDragEnd
 }) => {
   const isInteractable = tool === 'cursor';
+  const isText = data.itemType === 'text';
+  const isShape = data.itemType === 'shape';
 
   return (
     <motion.div
       drag={isInteractable}
       dragMomentum={false}
       onDragEnd={(_, info) => {
-        onDrag({ x: info.offset.x, y: info.offset.y });
+        onDragEnd({ x: data.x + info.offset.x, y: data.y + info.offset.y });
       }}
       initial={{ x: data.x, y: data.y, rotate: data.rotation, opacity: 0, scale: 0.8 }}
       animate={{ 
@@ -36,13 +38,13 @@ export const StickyNote: React.FC<Props> = ({
         zIndex: isSelected ? 50 : 10
       }}
       transition={{ type: "spring", bounce: 0.2 }}
-      className={`absolute ${isInteractable ? 'cursor-grab active:cursor-grabbing' : ''}`}
+      className={`absolute nopan ${isInteractable ? 'cursor-grab active:cursor-grabbing' : ''}`}
       onPointerDown={(e) => {
         if(isInteractable) onClick(e);
       }}
     >
       <div 
-        className={`relative w-48 h-48 flex items-center justify-center shadow-lg transition-shadow duration-200 group ${isSelected ? 'shadow-2xl' : 'hover:shadow-xl'}`}
+        className={`relative w-48 h-48 flex items-center justify-center transition-shadow duration-200 group ${isShape ? 'rounded-full' : ''} ${!isText ? (isSelected ? 'shadow-2xl' : 'shadow-lg hover:shadow-xl') : ''}`}
         style={{ backgroundColor: data.color }}
       >
         {/* Selection Border & Handles */}

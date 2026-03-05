@@ -50,6 +50,7 @@ interface Props {
 
 export const AboutMeBoard: React.FC<Props> = ({ onBack }) => {
   const [initialState, setInitialState] = useState<{ scale: number; x: number; y: number } | null>(null);
+  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth < 768 : false);
   
   // Track drag offsets to update connector lines
   const [offsets, setOffsets] = useState({
@@ -60,15 +61,28 @@ export const AboutMeBoard: React.FC<Props> = ({ onBack }) => {
   });
 
   useEffect(() => {
-    // Calculate initial centering manually
-    const scale = 0.85;
-    const winW = window.innerWidth;
-    const winH = window.innerHeight;
-    
-    const x = (winW / 2) - (CENTER_X * scale);
-    const y = (winH / 2) - (CENTER_Y * scale);
+    const handleResize = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      
+      // Calculate initial centering
+      // Reduced scale (0.55 instead of 0.85) to ensure it fits the viewport better
+      const scale = mobile ? 0.35 : 0.55; 
+      const winW = window.innerWidth;
+      const winH = window.innerHeight;
+      
+      const targetX = CENTER_X;
+      const targetY = mobile ? CENTER_Y - 100 : CENTER_Y;
 
-    setInitialState({ scale, x, y });
+      const x = (winW / 2) - (targetX * scale);
+      const y = (winH / 2) - (targetY * scale);
+
+      setInitialState({ scale, x, y });
+    };
+
+    handleResize(); // Initial call
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   const handleDrag = (key: keyof typeof offsets, delta: { x: number, y: number }) => {

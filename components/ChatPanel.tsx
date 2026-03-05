@@ -8,7 +8,7 @@ interface Props {
   onClose: () => void;
 }
 
-const API_KEY = "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";
+const API_KEY = import.meta.env.VITE_OPENAI_API_KEY;
 
 const SYSTEM_PROMPT = `You are a friendly and helpful AI assistant for Akshay Krishnan's portfolio. 
         

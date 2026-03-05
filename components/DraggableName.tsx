@@ -18,7 +18,7 @@ export const DraggableName: React.FC<Props> = ({ isSelected, onClick, tool, init
       drag={isInteractable}
       dragMomentum={false}
       style={{ x: initialX, y: initialY }}
-      className={`absolute z-20 ${isInteractable ? 'cursor-grab active:cursor-grabbing' : ''}`}
+      className={`absolute z-20 nopan ${isInteractable ? 'cursor-grab active:cursor-grabbing' : ''}`}
       onPointerDown={(e) => {
         e.stopPropagation();
         if(isInteractable) onClick();

@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { TransformWrapper, TransformComponent, ReactZoomPanPinchRef } from "react-zoom-pan-pinch";
-import { MousePointer2, Hand, Pen, MessageSquare, Plus, Minus, Maximize, Share2, Send, X, ExternalLink, Sparkles, ArrowDown } from 'lucide-react';
+import { MousePointer2, Hand, Pen, MessageSquare, Plus, Minus, Maximize, Share2, Send, X, ExternalLink, Sparkles, ArrowDown, Menu, MoreVertical, Timer, Video, Play, LayoutTemplate, Layout, StickyNote as StickyNoteIcon, Type, Shapes, Crop, SmilePlus, Undo, Redo, Navigation } from 'lucide-react';
 import emailjs from '@emailjs/browser';
 import { Line, Point, ToolType, StickyNoteData, CommentData, ProjectData } from '../types';
 import { DraggableName } from './DraggableName';
@@ -9,11 +9,12 @@ import { StickyNote } from './StickyNote';
 import { CommentBubble } from './CommentBubble';
 import { ProjectFrame } from './ProjectFrame';
 import { ChatPanel } from './ChatPanel';
+import { ShareModal } from './ShareModal';
 
 // --- Configuration ---
-const EMAILJS_SERVICE_ID = "service_s1sl706";
-const EMAILJS_TEMPLATE_ID = "template_fdj50rq";
-const EMAILJS_PUBLIC_KEY = "SJAnPIuCguEzZrNdv";
+const EMAILJS_SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID || "service_s1sl706";
+const EMAILJS_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID || "template_fdj50rq";
+const EMAILJS_PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY || "SJAnPIuCguEzZrNdv";
 
 // --- Board Dimensions ---
 const BOARD_WIDTH = 4000;
@@ -95,6 +96,7 @@ export const HeroCanvas: React.FC<HeroCanvasProps> = ({ onNavigate }) => {
   const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth < 768 : false);
   const [tool, setTool] = useState<ToolType>('cursor');
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [initialState, setInitialState] = useState<{ scale: number; x: number; y: number } | null>(null);
   
   const layout = useMemo(() => getLayout(isMobile), [isMobile]);
@@ -106,6 +108,48 @@ export const HeroCanvas: React.FC<HeroCanvasProps> = ({ onNavigate }) => {
   // Initialize positions based on layout
   const [notes, setNotes] = useState<StickyNoteData[]>(layout.notes);
   
+  // --- History Management ---
+  const [history, setHistory] = useState<{ lines: Line[], notes: StickyNoteData[] }[]>([]);
+  const [redoStack, setRedoStack] = useState<{ lines: Line[], notes: StickyNoteData[] }[]>([]);
+
+  const pushToHistory = (newLines: Line[], newNotes: StickyNoteData[]) => {
+    setHistory(prev => [...prev, { lines, notes }]);
+    setRedoStack([]); // Clear redo stack on new action
+  };
+
+  const handleUndo = () => {
+    if (history.length === 0) return;
+    const lastState = history[history.length - 1];
+    setRedoStack(prev => [{ lines, notes }, ...prev]);
+    setLines(lastState.lines);
+    setNotes(lastState.notes);
+    setHistory(prev => prev.slice(0, -1));
+  };
+
+  const handleRedo = () => {
+    if (redoStack.length === 0) return;
+    const nextState = redoStack[0];
+    setHistory(prev => [...prev, { lines, notes }]);
+    setLines(nextState.lines);
+    setNotes(nextState.notes);
+    setRedoStack(prev => prev.slice(1));
+  };
+
+  // Keyboard Shortcuts for Undo/Redo
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'z') {
+        if (e.shiftKey) {
+          handleRedo();
+        } else {
+          handleUndo();
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [history, redoStack, lines, notes]);
+
   // Effect to update items when layout changes (resize)
   useEffect(() => {
     setNotes(layout.notes);
@@ -153,7 +197,7 @@ export const HeroCanvas: React.FC<HeroCanvasProps> = ({ onNavigate }) => {
   };
 
   const handlePointerDown = (e: React.PointerEvent, scale: number) => {
-    if (tool === 'pen' || tool === 'comment') {
+    if (tool === 'pen' || tool === 'comment' || ['sticky', 'text', 'shape'].includes(tool)) {
        e.preventDefault(); 
        e.stopPropagation();
     }
@@ -163,6 +207,20 @@ export const HeroCanvas: React.FC<HeroCanvasProps> = ({ onNavigate }) => {
     } else if (tool === 'comment') {
       const coords = getRelativeCoords(e, scale);
       setActiveCommentForm(coords);
+    } else if (tool === 'sticky' || tool === 'text' || tool === 'shape') {
+      const coords = getRelativeCoords(e, scale);
+      const newNote: StickyNoteData = {
+        id: `user-item-${Date.now()}`,
+        itemType: tool as any,
+        text: tool === 'sticky' ? 'New Note' : tool === 'text' ? 'New Text' : 'New Shape',
+        x: coords.x - 50, // center approximately
+        y: coords.y - 50,
+        rotation: (Math.random() - 0.5) * 6,
+        color: tool === 'sticky' ? '#FFF9B1' : tool === 'text' ? 'transparent' : '#BAE6FD'
+      };
+      pushToHistory(lines, notes);
+      setNotes(prev => [...prev, newNote]);
+      setTool('cursor'); // Auto-switch back to cursor after adding
     } else if (tool === 'cursor') {
       setSelectedId(null);
     }
@@ -179,6 +237,7 @@ export const HeroCanvas: React.FC<HeroCanvasProps> = ({ onNavigate }) => {
 
   const handlePointerUp = (e: React.PointerEvent) => {
     if (currentLine) {
+      pushToHistory(lines, notes);
       setLines(prev => [...prev, currentLine]);
       setCurrentLine(null);
     }
@@ -208,8 +267,9 @@ export const HeroCanvas: React.FC<HeroCanvasProps> = ({ onNavigate }) => {
     } catch (err) { console.error(err); }
   };
 
-  const handleNoteDrag = (id: string, delta: {x: number, y: number}) => {
-    setNotes(prev => prev.map(n => n.id === id ? { ...n, x: n.x + delta.x, y: n.y + delta.y } : n));
+  const handleNoteDragEnd = (id: string, newPos: {x: number, y: number}) => {
+    pushToHistory(lines, notes);
+    setNotes(prev => prev.map(n => n.id === id ? { ...n, x: newPos.x, y: newPos.y } : n));
   };
 
   const handleStickyClick = (id: string, e: React.PointerEvent) => {
@@ -230,17 +290,36 @@ export const HeroCanvas: React.FC<HeroCanvasProps> = ({ onNavigate }) => {
       
       <ChatPanel isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
 
-      {/* Top Bar */}
-      <div className="absolute top-4 right-4 flex items-center gap-4 z-50 pointer-events-none">
-        <div className="pointer-events-auto flex items-center gap-4">
-          <div className="flex -space-x-2">
-             <div className="w-8 h-8 rounded-full bg-pink-500 border-2 border-white flex items-center justify-center text-xs text-white font-bold shadow-sm">AK</div>
-             <div className="w-8 h-8 rounded-full bg-blue-500 border-2 border-white flex items-center justify-center text-xs text-white font-bold shadow-sm">V</div>
-          </div>
-          <button className="bg-[#2D9BF0] hover:bg-blue-600 text-white px-4 py-2 rounded-md font-medium flex items-center gap-2 shadow-sm transition-colors text-sm">
-            <Share2 size={16} /> Share
-          </button>
-        </div>
+      {/* Top Bar Left */}
+      <div className="absolute top-4 left-4 z-50 flex items-center bg-white rounded-md shadow-sm border border-gray-200 px-3 py-2 gap-3 pb-2">
+        <Menu size={18} className="text-gray-700 cursor-pointer" />
+        <span className="font-bold text-lg tracking-tighter text-gray-800">KRIS</span>
+        <div className="w-px h-5 bg-gray-300"></div>
+        <span className="font-semibold text-gray-800 text-sm">Portfolio Board</span>
+        <MoreVertical size={16} className="text-gray-500 cursor-pointer" />
+      </div>
+
+      {/* Top Bar Right */}
+      <div className="absolute top-4 right-4 z-50 flex items-center bg-white rounded-md shadow-sm border border-gray-200 p-1 gap-2">
+         {/* action icons */}
+         <div className="flex items-center gap-3 px-2 text-gray-600">
+           <Timer size={18} className="cursor-pointer" />
+           <MessageSquare size={18} className="cursor-pointer" />
+           <Video size={18} className="cursor-pointer" />
+         </div>
+         <div className="w-px h-6 bg-gray-300 mx-1"></div>
+         <div className="flex -space-x-2 px-1">
+             <div className="w-7 h-7 rounded-full bg-pink-500 border border-white flex items-center justify-center text-[10px] text-white font-bold shadow-sm z-10">AK</div>
+             <div className="w-7 h-7 rounded-full bg-teal-500 border border-white flex items-center justify-center text-[10px] text-white font-bold shadow-sm z-0">V</div>
+         </div>
+         <div className="flex items-center gap-1 mx-1">
+           <button className="hover:bg-gray-100 flex items-center gap-1 text-gray-700 px-2 py-1.5 rounded text-xs font-semibold transition-colors">
+              <Play size={14} className="fill-current" /> Present
+           </button>
+           <button onClick={() => setIsShareModalOpen(true)} className="bg-[#4262FF] hover:bg-[#3B57E5] text-white px-3 py-1.5 rounded font-medium flex items-center gap-1 transition-colors text-xs">
+              <Share2 size={14} /> Share
+           </button>
+         </div>
       </div>
 
       <TransformWrapper
@@ -252,7 +331,7 @@ export const HeroCanvas: React.FC<HeroCanvasProps> = ({ onNavigate }) => {
         minScale={0.4}
         maxScale={4}
         limitToBounds={false}
-        disabled={tool === 'pen' || tool === 'comment'}
+        disabled={tool === 'pen' || tool === 'comment' || ['sticky', 'text', 'shape'].includes(tool)}
         panning={{ excluded: ["nopan"] }}
       >
         {({ zoomIn, zoomOut, resetTransform, state }: any) => {
@@ -281,15 +360,15 @@ export const HeroCanvas: React.FC<HeroCanvasProps> = ({ onNavigate }) => {
                  {/* --- ISLAND ZONES --- */}
                  
                  {/* Zone A: The HQ */}
-                 <div className="absolute border-2 border-dashed border-slate-300 rounded-3xl pointer-events-none opacity-50 p-12 flex flex-col items-center"
+                 <div className="absolute border-2 border-dashed border-slate-400 rounded-3xl pointer-events-none opacity-70 p-12 flex flex-col items-center"
                       style={{ top: layout.zoneA.y, left: layout.zoneA.x, width: layout.zoneA.w, height: layout.zoneA.h }}>
-                    <span className="absolute -top-3 left-10 bg-[#F5F6F7] px-4 py-1 text-sm font-bold text-gray-400 uppercase tracking-widest border border-slate-200 rounded-full">HQ / Profile</span>
+                    <span className="absolute -top-3.5 left-10 bg-white px-5 py-1.5 text-[10px] font-black text-gray-600 uppercase tracking-[0.2em] border border-slate-300 rounded-full shadow-sm">HQ / Profile</span>
                  </div>
 
                  {/* Zone B: The Gallery */}
-                 <div className="absolute border-2 border-dashed border-slate-300 rounded-3xl pointer-events-none opacity-50"
+                 <div className="absolute border-2 border-dashed border-slate-400 rounded-3xl pointer-events-none opacity-70"
                       style={{ top: layout.zoneB.y, left: layout.zoneB.x, width: layout.zoneB.w, height: layout.zoneB.h }}>
-                    <span className="absolute -top-3 right-10 bg-[#F5F6F7] px-4 py-1 text-sm font-bold text-gray-400 uppercase tracking-widest border border-slate-200 rounded-full">Latest Case Studies</span>
+                    <span className="absolute -top-3.5 right-10 bg-white px-5 py-1.5 text-[10px] font-black text-gray-600 uppercase tracking-[0.2em] border border-slate-300 rounded-full shadow-sm">Latest Case Studies</span>
                  </div>
 
                  {/* --- CONNECTORS --- */}
@@ -351,8 +430,8 @@ export const HeroCanvas: React.FC<HeroCanvasProps> = ({ onNavigate }) => {
                  {notes.map(note => (
                     <StickyNote 
                       key={note.id} data={note} isSelected={selectedId === note.id} tool={tool}
-                      onClick={(e) => handleStickyClick(note.id, e)}
-                      onDrag={(delta) => handleNoteDrag(note.id, delta)}
+                      onClick={(e: React.PointerEvent) => handleStickyClick(note.id, e)}
+                      onDragEnd={(newPos: {x: number, y: number}) => handleNoteDragEnd(note.id, newPos)}
                     />
                  ))}
 
@@ -378,12 +457,26 @@ export const HeroCanvas: React.FC<HeroCanvasProps> = ({ onNavigate }) => {
 
             {/* --- UI OVERLAYS --- */}
             
-            <div className="absolute top-1/2 left-6 -translate-y-1/2 flex flex-col gap-2 bg-white p-2 rounded-xl shadow-[0_4px_24px_rgba(0,0,0,0.08)] border border-gray-100 z-50">
-              <ToolBtn active={tool === 'cursor'} onClick={() => setTool('cursor')} icon={<MousePointer2 size={20} />} label="Cursor (V)" />
-              <ToolBtn active={tool === 'pen'} onClick={() => setTool('pen')} icon={<Pen size={20} />} label="Pen (P)" />
-              <ToolBtn active={tool === 'hand'} onClick={() => setTool('hand')} icon={<Hand size={20} />} label="Hand (H)" />
-              <div className="w-full h-px bg-gray-100 my-1"></div>
-              <ToolBtn active={tool === 'comment'} onClick={() => setTool('comment')} icon={<MessageSquare size={20} />} label="Comment (C)" />
+            <div className="absolute top-1/2 left-4 -translate-y-1/2 flex flex-col gap-3 z-50">
+              <div className="flex flex-col gap-0.5 bg-white p-1.5 rounded-md shadow-md border border-gray-200">
+                <ToolBtn active={tool === 'cursor'} onClick={() => setTool('cursor')} icon={<Navigation size={18} className={tool==='cursor'?'fill-current':''} />} label="Select (V)" />
+                <ToolBtn active={false} onClick={() => {}} icon={<LayoutTemplate size={18} />} label="Templates" />
+                <ToolBtn active={false} onClick={() => {}} icon={<Layout size={18} />} label="Kanban / Boards" />
+                <ToolBtn active={tool === 'sticky'} onClick={() => setTool('sticky')} icon={<StickyNoteIcon size={18} />} label="Sticky Note (N)" />
+                <ToolBtn active={tool === 'text'} onClick={() => setTool('text')} icon={<Type size={18} />} label="Text (T)" />
+                <ToolBtn active={tool === 'shape'} onClick={() => setTool('shape')} icon={<Shapes size={18} />} label="Shape (S)" />
+                <ToolBtn active={tool === 'pen'} onClick={() => setTool('pen')} icon={<Pen size={18} />} label="Pen (P)" />
+                <ToolBtn active={false} onClick={() => {}} icon={<Crop size={18} />} label="Frame (F)" />
+                <ToolBtn active={false} onClick={() => {}} icon={<SmilePlus size={18} />} label="Stickers & Emojis" />
+                <ToolBtn active={tool === 'comment'} onClick={() => setTool('comment')} icon={<MessageSquare size={18} />} label="Comment (C)" />
+                <ToolBtn active={false} onClick={() => {}} icon={<Plus size={18} />} label="More tools" />
+              </div>
+              
+              {/* Undo / Redo */}
+              <div className="flex flex-col gap-0.5 bg-white p-1.5 rounded-md shadow-md border border-gray-200">
+                <ToolBtn active={false} onClick={handleUndo} icon={<Undo size={18} />} label="Undo (Cmd+Z)" />
+                <ToolBtn active={false} onClick={handleRedo} icon={<Redo size={18} />} label="Redo (Cmd+Shift+Z)" />
+              </div>
             </div>
 
             {/* Bottom Controls */}
@@ -410,13 +503,15 @@ export const HeroCanvas: React.FC<HeroCanvasProps> = ({ onNavigate }) => {
           </>
         )}}
       </TransformWrapper>
+
+      <ShareModal isOpen={isShareModalOpen} onClose={() => setIsShareModalOpen(false)} />
     </div>
   );
 };
 
 // --- Helpers ---
 const ToolBtn = ({ active, onClick, icon, label }: any) => (
-  <button onClick={onClick} title={label} className={`p-3 rounded-lg transition-all duration-200 ${active ? 'bg-[#E6F3FD] text-[#2D9BF0] shadow-inner' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'}`}>{icon}</button>
+  <button onClick={onClick} title={label} className={`p-2.5 rounded transition-all duration-200 ${active ? 'bg-[#E5E9FF] text-[#4262FF]' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100'}`}>{icon}</button>
 );
 
 const CommentForm = ({ x, y, onSubmit, onCancel }: { x: number, y: number, onSubmit: (a:string, t:string)=>void, onCancel: ()=>void }) => {

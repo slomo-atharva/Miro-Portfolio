@@ -8,10 +8,11 @@ export interface Line {
   color: string;
 }
 
-export type ToolType = 'cursor' | 'hand' | 'pen' | 'comment';
+export type ToolType = 'cursor' | 'hand' | 'pen' | 'comment' | 'shape' | 'text' | 'sticky';
 
 export interface StickyNoteData {
   id: string;
+  itemType?: 'sticky' | 'text' | 'shape';
   text: string;
   x: number;
   y: number;

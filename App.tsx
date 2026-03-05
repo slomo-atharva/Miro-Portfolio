@@ -6,13 +6,20 @@ import { ContactBoard } from './components/ContactBoard';
 import { AllWorksBoard } from './components/AllWorksBoard';
 import { CommunityBoard } from './components/CommunityBoard';
 import { CaseStudyBoard } from './components/CaseStudyBoard';
+import { ProfileCardView } from './components/ProfileCardView';
 
 const App: React.FC = () => {
-  const [view, setView] = useState<'home' | 'about' | 'contact' | 'works' | 'community' | 'casestudy'>('home');
+  const [view, setView] = useState<'home' | 'about' | 'contact' | 'works' | 'community' | 'casestudy' | 'profile'>(() => {
+    const params = new URLSearchParams(window.location.search);
+    const initialView = params.get('view');
+    return initialView === 'profile' ? 'profile' : 'home';
+  });
 
   return (
     <div className="w-screen h-screen relative bg-white overflow-hidden">
-      {view === 'home' ? (
+      {view === 'profile' ? (
+        <ProfileCardView />
+      ) : view === 'home' ? (
         <HeroCanvas onNavigate={(page) => setView(page)} />
       ) : view === 'about' ? (
         <AboutMeBoard onBack={() => setView('home')} />

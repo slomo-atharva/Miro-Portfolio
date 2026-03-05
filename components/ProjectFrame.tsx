@@ -15,8 +15,11 @@ export const ProjectFrame: React.FC<Props> = ({ data, onClick }) => {
       animate={{ opacity: 1, scale: 1 }}
       whileHover={{ scale: 1.05, zIndex: 50 }}
       style={{ x: data.x, y: data.y }}
-      className="absolute w-[320px] bg-white rounded-lg shadow-xl border-2 border-gray-800 overflow-visible cursor-pointer group"
-      onClick={onClick}
+      className="absolute w-[320px] bg-white rounded-lg shadow-xl border-2 border-gray-800 overflow-visible cursor-pointer group nopan"
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick();
+      }}
     >
       {/* Header Bar */}
       <div className="bg-gray-100 p-3 border-b-2 border-gray-800 rounded-t-md flex justify-between items-center">

@@ -15,7 +15,7 @@ export const CommentBubble: React.FC<Props> = ({ data }) => {
 
   return (
     <div
-      className="absolute pointer-events-auto"
+      className="absolute pointer-events-auto nopan"
       style={{ left: data.x, top: data.y, zIndex: isOpen ? 100 : 20 }}
     >
       {/* Marker Icon - Always visible */}
@@ -24,7 +24,10 @@ export const CommentBubble: React.FC<Props> = ({ data }) => {
         animate={{ scale: 1 }}
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.95 }}
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={(e) => {
+          e.stopPropagation();
+          setIsOpen(!isOpen);
+        }}
         className={`w-10 h-10 rounded-tl-full rounded-tr-full rounded-br-full border-2 border-white shadow-md flex items-center justify-center transition-colors relative z-10 ${isOpen ? 'bg-[#2D9BF0]' : 'bg-[#FFD02F]'}`}
       >
          <MessageSquare size={16} className={isOpen ? 'text-white' : 'text-gray-800'} fill={isOpen ? "currentColor" : "none"} strokeWidth={2.5} />
